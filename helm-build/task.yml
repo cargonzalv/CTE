@@ -1,0 +1,39 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: typositoire/concourse-helm3-resource
+    tag: v1.1.0
+
+inputs:
+  - name: repo
+
+outputs:
+  - name: chart
+
+params:
+  DEBUG:
+  CHART_PATH: ci/helm/service-chart
+  URL: https://adgear.jfrog.io/adgear/adgear-helm
+  USERNAME: ((artifactory.username))
+  PASSWORD: ((artifactory.password))
+
+run:
+  path: /bin/bash
+  args:
+    - -c
+    - |
+      #!/bin/env bash
+      : "${DEBUG:=false}"
+
+      if "$DEBUG"; then
+          set -x
+      fi
+
+      set -e
+
+      helm repo add adgear-helm "${URL}" --username "${USERNAME}" --password "${PASSWORD}"
+      helm dep build repo/${CHART_PATH}
+      mkdir -p chart/${CHART_PATH}
+      cp -pr repo/${CHART_PATH}/* chart/${CHART_PATH}/

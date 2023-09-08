@@ -1,0 +1,30 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: hadolint/hadolint
+    tag: latest-alpine 
+
+inputs:
+  - name: repo
+
+params:
+  DEBUG:
+
+run:
+  path: /bin/sh
+  args:
+  - -c
+  - |
+
+    : "${DEBUG:=false}"
+
+    if "$DEBUG"; then
+        set -x
+    fi
+
+    set -e
+
+    cd repo/
+    hadolint Dockerfile

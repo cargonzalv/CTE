@@ -1,0 +1,53 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: alpine
+
+inputs:
+  - name: repo
+
+outputs:
+  - name: out
+
+params:
+  DEBUG:
+  ADDITIONAL_TAGS:
+
+run:
+  path: /bin/sh
+  args:
+    - -c
+    - |
+      #!/bin/env bash
+      : "${DEBUG:=false}"
+
+      if "$DEBUG"; then
+          set -x
+      fi
+
+      set -e
+
+      apk add --no-cache jq git
+
+      prefix="ref: refs/heads/"
+      GIT_TAG="$(git --git-dir=repo/.git for-each-ref refs/tags --sort=-creatordate --format='%(refname:lstrip=2)' --count=1)"
+      GIT_PRIV_TAG="$(git --git-dir=repo/.git for-each-ref refs/tags --sort=-creatordate --format='%(refname:lstrip=2)' --count=2 | sed -n '2 p')"
+      BUILD_DATE="$(date +%FT%T%z)"
+      HEAD="$(git --git-dir=repo/.git rev-parse --abbrev-ref HEAD)"
+      echo ${HEAD} > out/head_name
+      tr -c -- '-_.a-zA-Z0-9\n' - <out/head_name >out/head_name_safe
+      HEAD_SHA="$(git --git-dir=repo/.git rev-parse --verify HEAD)"
+      HEAD_SHORT_SHA="$(git --git-dir=repo/.git rev-parse --short HEAD)"
+
+      : "${GIT_TAG:=not_set}"
+
+      echo $BUILD_DATE > out/build_date
+      echo $HEAD_SHA > out/head_sha
+      echo $HEAD_SHORT_SHA > out/short_hash
+      echo $ADDITIONAL_TAGS > out/additional_tags
+      echo $GIT_TAG > out/tag
+      echo $GIT_PRIV_TAG > out/priv_tag
+
+      grep -H '' out/*

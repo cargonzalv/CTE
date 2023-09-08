@@ -1,0 +1,43 @@
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: adgear-docker.jfrog.io/adgear/sdk-node-concourse
+    tag: 16
+    username: ((artifactory.username))
+    password: ((artifactory.password))
+inputs:
+  - name: repo
+outputs:
+  - name: release
+params:
+  DEBUG:
+  ACTION:
+  OUT_DIR:
+  ARTIFACTORY_USER: ((artifactory.username))
+  ARTIFACTORY_PASSWORD: ((artifactory.password))
+
+run:
+  path: /bin/sh
+  args:
+  - -c
+  - |
+    : "${DEBUG:=false}"
+    if "$DEBUG"; then
+      set -x
+    fi
+    yarn config set strict-ssl false
+
+    cd repo/
+
+    curl -s -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" https://adgear.jfrog.io/adgear/api/npm/auth > ./.npmrc
+    echo "registry=https://adgear.jfrog.io/artifactory/api/npm/trader-npm/" >> ./.npmrc
+    yarn policies set-version
+    yarn
+    yarn $ACTION
+    
+    : "${OUT_DIR:=false}"
+    if [ -d "$OUT_DIR" ]; then
+        cp -rf "$OUT_DIR"/* ../release/
+    fi
+    ls -la ../release/

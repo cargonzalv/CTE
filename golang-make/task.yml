@@ -1,0 +1,45 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: 1.18-bullseye
+
+inputs:
+  - name: repo
+
+params:
+  DEBUG:
+  ACTION:
+  GIT_USER_NAME:    "Concourse"
+  GIT_USER_EMAIL:   "sre+concourse@adgear.com"
+  SSH_PRIVATE_KEY: ((adgear-concourse.ssh_private_key))
+
+run:
+  path: /bin/bash
+  args:
+  - -c
+  - |
+
+    : "${DEBUG:=false}"
+
+    if "$DEBUG"; then
+        set -x
+    fi
+
+    eval $(ssh-agent -s)
+    mkdir -p -m 0600 ~/.ssh
+    ssh-keyscan github.com >> ~/.ssh/known_hosts
+    ssh-add - <<< $SSH_PRIVATE_KEY 
+    ssh-add -l
+
+    go install honnef.co/go/tools/cmd/staticcheck@latest
+
+    set -e
+
+    git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+    cd repo/
+    make $ACTION
+

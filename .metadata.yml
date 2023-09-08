@@ -1,0 +1,13 @@
+metadata:
+  name: go-commons
+  description: "Generic tasks for concourse pipeline"
+  labels:
+    jira-project: "PP" 
+    jira-board: 82
+    public: false
+    sensitive: false
+
+spec:
+  owner: cg-sps
+  type: infrastructure
+  lifecycle: production
